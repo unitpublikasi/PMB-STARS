@@ -20,7 +20,11 @@ import {
   Download, 
   Building2,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  RefreshCw,
+  Cloud,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Registration, ProgramType, RegistrationStatus, RegistrationFormData } from '../types';
 import { exportToExcel, exportToPdf, exportSingleRegistrationPdf, formatDateIndo, formatDateShort } from '../utils/exportUtils';
@@ -32,6 +36,8 @@ interface AdminDashboardProps {
   onDeleteRegistration: (id: string) => void;
   onAddManualRegistration: (formData: RegistrationFormData) => void;
   onResetSampleData: () => void;
+  onRefreshCloud?: () => void;
+  isSyncing?: boolean;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -40,12 +46,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteRegistration,
   onAddManualRegistration,
   onResetSampleData,
+  onRefreshCloud,
+  isSyncing = false,
 }) => {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState<'all' | ProgramType>('all');
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | RegistrationStatus>('all');
+  const [viewMode, setViewMode] = useState<'adaptive' | 'cards' | 'table'>('adaptive');
 
   // Modals
   const [viewingRegistration, setViewingRegistration] = useState<Registration | null>(null);
@@ -175,78 +184,91 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Export to Excel & PDF */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Action Buttons: Sync Cloud, Export to Excel & PDF */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+          {onRefreshCloud && (
+            <button
+              type="button"
+              onClick={onRefreshCloud}
+              disabled={isSyncing}
+              className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-semibold text-xs sm:text-sm shadow-sm transition-all disabled:opacity-50"
+              title="Sinkronkan pembaruan data terkini dari Cloud Firestore"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="truncate">{isSyncing ? 'Menyinkronkan...' : 'Sinkron Cloud'}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => exportToExcel(filteredRegistrations)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
             title="Download file Excel data pendaftar"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
-            <span>Export Excel (.xlsx)</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-200" />
+            <span className="truncate">Export Excel</span>
           </button>
 
           <button
             type="button"
             onClick={() => exportToPdf(filteredRegistrations)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
             title="Cetak & Download rekapitulasi PDF"
           >
-            <FileText className="w-4 h-4 text-rose-200" />
-            <span>Export PDF (.pdf)</span>
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-200" />
+            <span className="truncate">Export PDF</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-semibold text-sm shadow-md transition-all"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-semibold text-xs sm:text-sm shadow-md transition-all"
           >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Tambah Data</span>
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">Tambah Data</span>
           </button>
         </div>
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Users className="w-6 h-6" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2.5 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase">Total Pendaftar</p>
-            <p className="text-2xl font-extrabold text-slate-900">{totalCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <GraduationCap className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase">Kelas Reguler</p>
-            <p className="text-2xl font-extrabold text-slate-900">{regulerCount}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase truncate">Total Pendaftar</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{totalCount}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-            <Briefcase className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2.5 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase">Kelas Karyawan</p>
-            <p className="text-2xl font-extrabold text-slate-900">{karyawanCount}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase truncate">Kelas Reguler</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{regulerCount}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-            <Clock className="w-6 h-6" />
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2.5 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+            <Briefcase className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase">Perlu Tindak Lanjut</p>
-            <p className="text-2xl font-extrabold text-slate-900">{newCount}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase truncate">Kelas Karyawan</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{karyawanCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2.5 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase truncate">Perlu Tindak Lanjut</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">{newCount}</p>
           </div>
         </div>
       </div>
@@ -375,54 +397,89 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* Registrations Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-slate-800 text-sm">
-            Daftar Calon Mahasiswa ({filteredRegistrations.length} data ditemukan)
-          </h3>
-          <span className="text-xs text-slate-500">
-            Format: Kelas Reguler & Kelas Karyawan STARS YKPN
-          </span>
+      {/* Registrations List / Table Section */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70">
+          <div>
+            <h3 className="font-extrabold text-slate-800 text-sm sm:text-base">
+              Daftar Calon Mahasiswa ({filteredRegistrations.length} data)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Kelas Reguler & Kelas Karyawan STARS YKPN (T.A. 2027/2028)
+            </p>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'cards'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Tampilan Kartu (Sangat ramah HP)"
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-amber-600" />
+              <span>Kartu</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Tampilan Tabel"
+            >
+              <List className="w-3.5 h-3.5 text-blue-600" />
+              <span>Tabel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('adaptive')}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'adaptive'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+              title="Otomatis (Kartu di HP, Tabel di Laptop)"
+            >
+              <span>Auto</span>
+            </button>
+          </div>
         </div>
 
         {filteredRegistrations.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center px-4">
             <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
               <Users className="w-6 h-6" />
             </div>
-            <p className="text-slate-600 font-semibold">Tidak ada data pendaftar yang cocok.</p>
+            <p className="text-slate-600 font-semibold text-sm">Tidak ada data pendaftar yang cocok.</p>
             <p className="text-xs text-slate-400 mt-1">Coba ubah kata kunci pencarian atau bersihkan filter.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px] tracking-wider">
-                <tr>
-                  <th className="px-4 py-3.5 text-center">No</th>
-                  <th className="px-4 py-3.5">No. Reg / Tgl</th>
-                  <th className="px-4 py-3.5">Program</th>
-                  <th className="px-4 py-3.5">Nama Lengkap & Email</th>
-                  <th className="px-4 py-3.5">Asal Sekolah / Perusahaan</th>
-                  <th className="px-4 py-3.5">WhatsApp</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredRegistrations.map((item, index) => {
-                  const isReguler = item.program === 'reguler';
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 text-center font-medium text-slate-400">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="font-mono font-bold text-slate-900 block">{item.id}</span>
-                        <span className="text-[10px] text-slate-400">{formatDateShort(item.createdAt)}</span>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+          <>
+            {/* 1. Mobile Cards View (Shown on mobile when adaptive, or always when cards mode selected) */}
+            <div className={`${viewMode === 'table' ? 'hidden' : viewMode === 'cards' ? 'block' : 'block md:hidden'} p-3.5 sm:p-5 space-y-3.5 bg-slate-50/50 divide-y-0`}>
+              {filteredRegistrations.map((item, index) => {
+                const isReguler = item.program === 'reguler';
+                return (
+                  <div 
+                    key={item.id} 
+                    className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3"
+                  >
+                    {/* Header Row: ID, Program, Date */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200">
+                          {item.id}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           isReguler 
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-amber-100 text-amber-900'
@@ -430,83 +487,232 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {isReguler ? <GraduationCap className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
                           {isReguler ? 'Reguler' : 'Karyawan'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="font-semibold text-slate-900 text-sm">{item.namaLengkap}</div>
-                        <div className="text-[11px] text-slate-500">{item.email}</div>
-                      </td>
-                      <td className="px-4 py-3.5 max-w-[200px] truncate" title={item.asalSekolahOrPerusahaan}>
-                        <div className="font-medium text-slate-800">{item.asalSekolahOrPerusahaan}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{item.alamat}</div>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <a
-                            href={`https://wa.me/${item.noWaAktif.replace(/[^0-9]/g, '').replace(/^0/, '62')}?text=Halo%20${encodeURIComponent(item.namaLengkap)},%20kami%20dari%20Panitia%20PMB%20STARS%20YKPN%20Yogyakarta...`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
-                            title="Chat WhatsApp Calon Mahasiswa"
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        {formatDateShort(item.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Candidate Name & School */}
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-base leading-snug">
+                        {item.namaLengkap}
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        {item.asalSekolahOrPerusahaan}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        {item.alamat}
+                      </p>
+                    </div>
+
+                    {/* WhatsApp Quick Action Buttons for Mobile */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={`https://wa.me/${item.noWaAktif.replace(/[^0-9]/g, '').replace(/^0/, '62')}?text=Halo%20${encodeURIComponent(item.namaLengkap)},%20kami%20dari%20Panitia%20PMB%20STARS%20YKPN%20Yogyakarta...`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-sm"
+                        title="Chat WhatsApp Calon Mahasiswa"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span className="truncate">WA Calon</span>
+                      </a>
+
+                      <a
+                        href={`https://wa.me/${item.noWaOrtu.replace(/[^0-9]/g, '').replace(/^0/, '62')}?text=Halo%20Bapak/Ibu%20Wali%20dari%20${encodeURIComponent(item.namaLengkap)},%20kami%20dari%20Panitia%20PMB%20STARS%20YKPN...`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-semibold text-xs transition-colors"
+                        title="Chat WhatsApp Ortu/Wali"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
+                        <span className="truncate">WA Ortu</span>
+                      </a>
+                    </div>
+
+                    {/* Status & Action Bar */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                      {/* Direct Status Selector */}
+                      <div className="flex-1 max-w-[150px]">
+                        <select
+                          value={item.status}
+                          onChange={(e) => onUpdateStatus(item.id, e.target.value as RegistrationStatus)}
+                          className={`w-full px-2 py-1.5 rounded-lg text-[11px] font-bold border focus:outline-none ${
+                            item.status === 'diterima'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : item.status === 'diverifikasi'
+                              ? 'bg-blue-50 text-blue-800 border-blue-300'
+                              : item.status === 'dihubungi'
+                              ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : 'bg-slate-50 text-slate-700 border-slate-300'
+                          }`}
+                        >
+                          <option value="baru">Baru</option>
+                          <option value="diverifikasi">Diverifikasi</option>
+                          <option value="dihubungi">Dihubungi</option>
+                          <option value="diterima">Diterima</option>
+                        </select>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetail(item)}
+                          className="p-2 rounded-xl text-slate-600 hover:text-blue-700 hover:bg-blue-50 bg-slate-100 transition-colors"
+                          title="Lihat Detail Lengkap"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportSingleRegistrationPdf(item)}
+                          className="p-2 rounded-xl text-slate-600 hover:text-amber-700 hover:bg-amber-50 bg-slate-100 transition-colors"
+                          title="Unduh Kartu PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Hapus data pendaftar ${item.namaLengkap} (${item.id})?`)) {
+                              onDeleteRegistration(item.id);
+                            }
+                          }}
+                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 bg-slate-100 transition-colors"
+                          title="Hapus Data"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table View (Shown on desktop when adaptive, or always when table mode selected) */}
+            <div className={`${viewMode === 'cards' ? 'hidden' : viewMode === 'table' ? 'block' : 'hidden md:block'} overflow-x-auto`}>
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px] tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3.5 text-center">No</th>
+                    <th className="px-4 py-3.5">No. Reg / Tgl</th>
+                    <th className="px-4 py-3.5">Program</th>
+                    <th className="px-4 py-3.5">Nama Lengkap & Email</th>
+                    <th className="px-4 py-3.5">Asal Sekolah / Perusahaan</th>
+                    <th className="px-4 py-3.5">WhatsApp</th>
+                    <th className="px-4 py-3.5">Status</th>
+                    <th className="px-4 py-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredRegistrations.map((item, index) => {
+                    const isReguler = item.program === 'reguler';
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-4 py-3.5 text-center font-medium text-slate-400">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className="font-mono font-bold text-slate-900 block">{item.id}</span>
+                          <span className="text-[10px] text-slate-400">{formatDateShort(item.createdAt)}</span>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            isReguler 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-amber-100 text-amber-900'
+                          }`}>
+                            {isReguler ? <GraduationCap className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
+                            {isReguler ? 'Reguler' : 'Karyawan'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="font-semibold text-slate-900 text-sm">{item.namaLengkap}</div>
+                          <div className="text-[11px] text-slate-500">{item.email}</div>
+                        </td>
+                        <td className="px-4 py-3.5 max-w-[200px] truncate" title={item.asalSekolahOrPerusahaan}>
+                          <div className="font-medium text-slate-800">{item.asalSekolahOrPerusahaan}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{item.alamat}</div>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <a
+                              href={`https://wa.me/${item.noWaAktif.replace(/[^0-9]/g, '').replace(/^0/, '62')}?text=Halo%20${encodeURIComponent(item.namaLengkap)},%20kami%20dari%20Panitia%20PMB%20STARS%20YKPN%20Yogyakarta...`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
+                              title="Chat WhatsApp Calon Mahasiswa"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              <span>{item.noWaAktif}</span>
+                            </a>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            Ortu: {item.noWaOrtu}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <select
+                            value={item.status}
+                            onChange={(e) => onUpdateStatus(item.id, e.target.value as RegistrationStatus)}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border cursor-pointer ${
+                              item.status === 'diterima'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : item.status === 'diverifikasi'
+                                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                : item.status === 'dihubungi'
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : 'bg-slate-100 text-slate-700 border-slate-300'
+                            }`}
                           >
-                            <MessageSquare className="w-3 h-3" />
-                            <span>{item.noWaAktif}</span>
-                          </a>
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Ortu: {item.noWaOrtu}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          item.status === 'diterima'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : item.status === 'diverifikasi'
-                            ? 'bg-blue-100 text-blue-800'
-                            : item.status === 'dihubungi'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                            title="Lihat Detail Pendaftar"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => exportSingleRegistrationPdf(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
-                            title="Unduh Kartu Pendaftaran (PDF)"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (window.confirm(`Hapus data pendaftar ${item.namaLengkap} (${item.id})?`)) {
-                                onDeleteRegistration(item.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Hapus Data"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            <option value="baru">Baru</option>
+                            <option value="diverifikasi">Diverifikasi</option>
+                            <option value="dihubungi">Dihubungi</option>
+                            <option value="diterima">Diterima</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetail(item)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                              title="Lihat Detail Pendaftar"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => exportSingleRegistrationPdf(item)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                              title="Unduh Kartu Pendaftaran (PDF)"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Hapus data pendaftar ${item.namaLengkap} (${item.id})?`)) {
+                                  onDeleteRegistration(item.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Hapus Data"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

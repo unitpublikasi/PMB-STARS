@@ -2,35 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default deny catch-all
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Registrations collection
+    // Registrations collection for PMB STARS YKPN
     match /registrations/{registrationId} {
-      // Anyone can submit a registration form
-      allow create: if request.resource.data.keys().hasAll([
-        'id', 'program', 'namaLengkap', 'alamat', 'asalSekolahOrPerusahaan',
-        'noWaAktif', 'noWaOrtu', 'email', 'alasanMendaftar', 'infoDapatDari',
-        'status', 'createdAt'
-      ]) &&
-      request.resource.data.program in ['reguler', 'karyawan'] &&
-      request.resource.data.status in ['baru', 'diverifikasi', 'dihubungi', 'diterima'] &&
-      request.resource.data.namaLengkap is string && request.resource.data.namaLengkap.size() >= 3 && request.resource.data.namaLengkap.size() <= 200 &&
-      request.resource.data.email is string && request.resource.data.email.size() <= 100 &&
-      request.resource.data.noWaAktif is string && request.resource.data.noWaAktif.size() <= 20;
-
-      // Allow read for administration and confirmation
-      allow read: if true;
-
-      // Allow update and delete for management
-      allow update, delete: if true;
+      // Public prospective students can submit registration
+      // Admin and staff can read, verify, update, and manage records across all devices
+      allow read, write: if true;
     }
 
-    // Connection testing
+    // Connection health check
     match /test/{docId} {
       allow read, write: if true;
+    }
+
+    // Default deny for anything else
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

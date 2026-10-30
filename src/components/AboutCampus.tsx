@@ -266,7 +266,11 @@ export const AboutCampus: React.FC<AboutCampusProps> = ({ onBackToForm }) => {
             <Globe className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-white text-sm">Website & Email Resmi</p>
-              <p className="mt-1 text-slate-400">pmb@starsykpn.ac.id</p>
+              <p className="mt-1">
+                <a href="mailto:starsykpn@gmail.com" className="text-amber-300 hover:underline">
+                  starsykpn@gmail.com
+                </a>
+              </p>
               <p className="text-slate-400">www.starsykpn.ac.id</p>
             </div>
           </div>

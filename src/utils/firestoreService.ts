@@ -6,8 +6,6 @@ import {
   updateDoc, 
   deleteDoc, 
   onSnapshot, 
-  query, 
-  orderBy,
   getDocFromServer
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -34,7 +32,7 @@ export interface FirestoreErrorInfo {
   };
 }
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {},
@@ -43,6 +41,40 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   };
   console.error('Firestore Error:', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
+}
+
+/**
+ * Remove all undefined properties so Firestore never throws unsupported field errors
+ */
+function cleanPayload<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Generate a unique registration ID across any device
+ */
+export function generateUniqueRegistrationId(): string {
+  const year = '2027';
+  const timeCode = Date.now().toString().slice(-4);
+  const randomSuffix = Math.floor(100 + Math.random() * 900);
+  return `REG-YKPN-${year}-${timeCode}${randomSuffix}`;
+}
+
+/**
+ * Sort registrations helper (newest first)
+ */
+function sortRegistrationsDesc(items: Registration[]): Registration[] {
+  return [...items].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
 }
 
 /**
@@ -59,31 +91,37 @@ export async function testFirestoreConnection(): Promise<boolean> {
 }
 
 /**
- * Fetch all registrations from Cloud Firestore with local cache fallback
+ * Fetch all registrations from Cloud Firestore.
+ * Always populates from cloud, ensuring any other laptop gets latest synced data.
  */
 export async function fetchAllRegistrations(): Promise<Registration[]> {
   const colPath = 'registrations';
   try {
-    const q = query(collection(db, colPath), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    const colRef = collection(db, colPath);
+    const snapshot = await getDocs(colRef);
 
     if (snapshot.empty) {
-      // Seed Cloud Firestore with initial sample data so database is populated
-      const initial = getStoredRegistrations();
+      // First time initialization: seed Cloud Firestore with initial sample data
+      console.log('Firestore is empty. Seeding initial registrations to cloud...');
+      const initial = INITIAL_REGISTRATIONS;
       for (const item of initial) {
-        await setDoc(doc(db, colPath, item.id), item);
+        const cleaned = cleanPayload(item);
+        await setDoc(doc(db, colPath, item.id), cleaned);
       }
+      saveRegistrations(initial);
       return initial;
     }
 
     const items: Registration[] = [];
     snapshot.forEach(docSnap => {
-      items.push(docSnap.data() as Registration);
+      const data = docSnap.data() as Registration;
+      items.push(data);
     });
 
-    // Sync with localStorage
-    saveRegistrations(items);
-    return items;
+    const sorted = sortRegistrationsDesc(items);
+    // Cache to localStorage for fast subsequent offline renders
+    saveRegistrations(sorted);
+    return sorted;
   } catch (error) {
     console.warn('Failed to fetch from Firestore, falling back to local storage:', error);
     return getStoredRegistrations();
@@ -91,15 +129,11 @@ export async function fetchAllRegistrations(): Promise<Registration[]> {
 }
 
 /**
- * Save new registration to Cloud Firestore and localStorage
+ * Save new registration to Cloud Firestore and sync local cache.
  */
 export async function createRegistrationCloud(formData: RegistrationFormData): Promise<Registration> {
   const colPath = 'registrations';
-  const current = getStoredRegistrations();
-  const nextNum = current.length + 1;
-  const padNum = String(nextNum).padStart(3, '0');
-  const year = new Date().getFullYear();
-  const id = `REG-YKPN-${year}-${padNum}`;
+  const id = generateUniqueRegistrationId();
 
   const newRecord: Registration = {
     ...formData,
@@ -108,21 +142,25 @@ export async function createRegistrationCloud(formData: RegistrationFormData): P
     createdAt: new Date().toISOString(),
   };
 
-  // Save to local storage first for immediate optimistic response
-  const updatedLocal = [newRecord, ...current];
-  saveRegistrations(updatedLocal);
+  const payload = cleanPayload(newRecord);
 
-  // Save to Cloud Firestore
   try {
-    await setDoc(doc(db, colPath, id), newRecord);
+    // 1. Direct write to Cloud Firestore
+    await setDoc(doc(db, colPath, id), payload);
+    console.log(`Successfully persisted registration ${id} to Cloud Firestore.`);
   } catch (error) {
     console.error('Failed to save to Firestore directly:', error);
     try {
       handleFirestoreError(error, OperationType.WRITE, `${colPath}/${id}`);
     } catch {
-      // Continue so applicant gets confirmation even if transient network error
+      // Allow fallback so user isn't blocked completely
     }
   }
+
+  // 2. Update local storage cache
+  const current = getStoredRegistrations();
+  const updatedLocal = sortRegistrationsDesc([newRecord, ...current.filter(r => r.id !== id)]);
+  saveRegistrations(updatedLocal);
 
   return newRecord;
 }
@@ -141,7 +179,8 @@ export async function updateRegistrationStatusCloud(
     if (notes !== undefined) {
       updateData.catatanAdmin = notes;
     }
-    await updateDoc(doc(db, colPath, id), updateData);
+    const payload = cleanPayload(updateData);
+    await updateDoc(doc(db, colPath, id), payload);
   } catch (error) {
     console.warn('Failed to update in Firestore:', error);
     try {
@@ -170,7 +209,7 @@ export async function deleteRegistrationCloud(id: string): Promise<void> {
 }
 
 /**
- * Subscribe to real-time updates from Cloud Firestore
+ * Subscribe to real-time updates from Cloud Firestore across all connected devices
  */
 export function subscribeToLiveRegistrations(
   onData: (registrations: Registration[]) => void,
@@ -178,18 +217,18 @@ export function subscribeToLiveRegistrations(
 ): () => void {
   const colPath = 'registrations';
   try {
-    const q = query(collection(db, colPath), orderBy('createdAt', 'desc'));
+    const colRef = collection(db, colPath);
     return onSnapshot(
-      q,
+      colRef,
       (snapshot) => {
         const items: Registration[] = [];
         snapshot.forEach(docSnap => {
           items.push(docSnap.data() as Registration);
         });
-        if (items.length > 0) {
-          saveRegistrations(items);
-          onData(items);
-        }
+        
+        const sorted = sortRegistrationsDesc(items);
+        saveRegistrations(sorted);
+        onData(sorted);
       },
       (error) => {
         console.warn('Realtime snapshot notice:', error);

@@ -28,7 +28,7 @@ import {
   subscribeToLiveRegistrations, 
   testFirestoreConnection 
 } from './utils/firestoreService';
-import { Building2, Heart, ShieldCheck, Phone, Mail, MapPin, Cloud, CloudCheck } from 'lucide-react';
+import { Building2, Heart, ShieldCheck, Phone, Mail, MapPin, Cloud, CheckCircle } from 'lucide-react';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'form' | 'admin' | 'info'>('form');
@@ -36,6 +36,22 @@ export default function App() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCloudConnected, setIsCloudConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleRefreshCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const items = await fetchAllRegistrations();
+      if (items) {
+        setRegistrations(items);
+        setIsCloudConnected(true);
+      }
+    } catch (err) {
+      console.warn('Manual cloud sync notice:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Initialize data on mount and connect to Cloud Firestore
   useEffect(() => {
@@ -60,11 +76,11 @@ export default function App() {
       }
     });
 
-    // 3. Real-time live listener from Cloud Firestore
+    // 3. Real-time live listener from Cloud Firestore across all devices
     const unsubscribe = subscribeToLiveRegistrations(
       (liveData) => {
         setIsCloudConnected(true);
-        if (liveData && liveData.length > 0) {
+        if (liveData) {
           setRegistrations(liveData);
         }
       },
@@ -152,6 +168,7 @@ export default function App() {
         onNavigate={handleNavigate}
         adminUser={adminUser}
         onLogout={handleLogout}
+        isCloudConnected={isCloudConnected}
       />
 
       {/* Main View Router */}
@@ -172,6 +189,8 @@ export default function App() {
               onDeleteRegistration={handleDeleteRegistration}
               onAddManualRegistration={handleAddManualRegistration}
               onResetSampleData={handleResetSampleData}
+              onRefreshCloud={handleRefreshCloud}
+              isSyncing={isSyncing}
             />
           ) : (
             <AdminLogin
@@ -207,24 +226,44 @@ export default function App() {
               <p className="text-slate-400 leading-relaxed mb-2 text-xs">
                 Jl. Gagak Rimang No. 2-4, Balapan, Klitren, Gondokusuman, Yogyakarta 55222
               </p>
-              <ul className="space-y-1 text-xs text-slate-300 mb-2">
-                <li>• <strong>Aulia Abrar:</strong> <a href="https://wa.me/6281262361981" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">081262361981</a></li>
-                <li>• <strong>Adibowo:</strong> <a href="https://wa.me/628122777205" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">08122777205</a></li>
-                <li>• <strong>Ardiansyah:</strong> <a href="https://wa.me/6285729635018" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">085729635018</a></li>
+              <ul className="space-y-1.5 text-xs text-slate-300 mb-3">
+                <li className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-slate-400">•</span>
+                  <strong>Aulia Abrar:</strong> 
+                  <a href="https://wa.me/6281262361981" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline inline-flex items-center gap-1">
+                    081262361981
+                  </a>
+                </li>
+                <li className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-slate-400">•</span>
+                  <strong>Adibowo:</strong> 
+                  <a href="https://wa.me/628122777205" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline inline-flex items-center gap-1">
+                    08122777205
+                  </a>
+                </li>
+                <li className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-slate-400">•</span>
+                  <strong>Ardiansyah:</strong> 
+                  <a href="https://wa.me/6285729635018" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline inline-flex items-center gap-1">
+                    085729635018
+                  </a>
+                </li>
               </ul>
-              <p className="text-slate-400 text-xs">
-                Email: <span className="text-slate-200">pmb@starsykpn.ac.id</span>
+              <p className="text-slate-400 text-xs flex items-center gap-1.5 flex-wrap">
+                <span>Email Resmi:</span>
+                <a href="mailto:starsykpn@gmail.com" className="text-amber-300 hover:underline font-medium">
+                  starsykpn@gmail.com
+                </a>
               </p>
             </div>
 
-
             <div>
               <h4 className="text-white font-bold text-sm mb-3">Akses & Informasi</h4>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 <li>
                   <button
                     onClick={() => handleNavigate('form')}
-                    className="hover:text-amber-400 transition-colors"
+                    className="hover:text-amber-400 transition-colors text-left py-0.5"
                   >
                     Formulir Pendaftaran PMB (Reguler & Karyawan)
                   </button>
@@ -232,7 +271,7 @@ export default function App() {
                 <li>
                   <button
                     onClick={() => handleNavigate('info')}
-                    className="hover:text-amber-400 transition-colors"
+                    className="hover:text-amber-400 transition-colors text-left py-0.5"
                   >
                     Profil Kampus & Fasilitas Studio
                   </button>
@@ -240,9 +279,9 @@ export default function App() {
                 <li>
                   <button
                     onClick={() => handleNavigate('admin')}
-                    className="inline-flex items-center gap-1.5 text-slate-300 hover:text-amber-400 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-slate-300 hover:text-amber-400 transition-colors text-left py-0.5"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span>Portal Administrator (Khusus Petugas PMB)</span>
                   </button>
                 </li>

@@ -313,7 +313,7 @@ export function exportSingleRegistrationPdf(reg: Registration): void {
   doc.setFont('helvetica', 'normal');
   doc.text('1. Simpan lembar bukti ini sebagai tanda sah pendaftaran PMB STARS YKPN.', 20, finalY + 13);
   doc.text('2. Panitia PMB akan menghubungi Anda via WhatsApp resmi untuk jadwal tes bakat/wawancara & penyerahan berkas.', 20, finalY + 18);
-  doc.text('3. Layanan informasi PMB WhatsApp: 0812-3456-7890 / Website: www.starsykpn.ac.id', 20, finalY + 23);
+  doc.text('3. Layanan informasi PMB Email: starsykpn@gmail.com / WA Panitia: 081262361981 (Aulia Abrar)', 20, finalY + 23);
 
   // Signatures
   const signY = finalY + 38;

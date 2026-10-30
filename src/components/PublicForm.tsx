@@ -454,34 +454,33 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
         /* Jika sudah klik pilihan kelas, tampilkan rincian biaya, persyaratan, dan form */
         <div id="rincian-biaya-dan-form" className="space-y-8 animate-fadeIn">
           {/* Top Control Bar: Active Class & Back Button */}
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-4 shadow-md border border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-3.5 sm:p-4 shadow-md border border-slate-200/90 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={handleBackToProgramSelection}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 text-xs font-bold transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 text-xs font-bold transition-colors w-full sm:w-auto"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
                 <span>Ganti Pilihan Kelas</span>
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 hidden sm:inline">Pilihan Kelas:</span>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+              <div className="flex items-center justify-center">
+                <span className={`text-xs font-bold px-3 py-1 rounded-full text-center ${
                   program === 'reguler' 
                     ? 'bg-blue-100 text-blue-900 border border-blue-200' 
                     : 'bg-amber-100 text-amber-900 border border-amber-300'
                 }`}>
-                  {program === 'reguler' ? '1. Kelas Reguler (S1 Penuh Waktu)' : '2. Kelas Karyawan (S1 Sore/Fleksibel)'}
+                  {program === 'reguler' ? '1. Kelas Reguler (Penuh Waktu)' : '2. Kelas Karyawan (Sore/Fleksibel)'}
                 </span>
               </div>
             </div>
 
             {/* Quick Switch to the other program */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => handleProgramChange('reguler')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${
                   program === 'reguler'
                     ? 'bg-blue-900 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -492,7 +491,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleProgramChange('karyawan')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center ${
                   program === 'karyawan'
                     ? 'bg-amber-600 text-slate-950 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
