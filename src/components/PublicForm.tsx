@@ -208,7 +208,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/20 text-xs sm:text-sm font-semibold mb-3">
           <Building2 className="w-4 h-4 text-amber-600" />
-          <span>Tahun Akademik 2026 / 2027 • Gelombang Terbuka</span>
+          <span>Tahun Akademik 2027 / 2028 • Gelombang Terbuka</span>
         </div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
           Penerimaan Mahasiswa/i Baru
@@ -294,12 +294,12 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
                   Biaya Pendidikan & Persyaratan Kelas Reguler
                 </h3>
                 <p className="text-xs text-blue-200">
-                  Sekolah Tinggi Arsitektur YKPN (STARS YKPN) Yogyakarta
+                  Sekolah Tinggi Arsitektur YKPN (STARS YKPN) Yogyakarta • T.A. 2027 / 2028
                 </p>
               </div>
             </div>
             <span className="self-start sm:self-auto text-xs bg-white/20 text-white font-bold px-3 py-1 rounded-full border border-white/30">
-              Jalur Reguler
+              Jalur Reguler • T.A. 2027/2028
             </span>
           </div>
 
@@ -312,7 +312,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
                   <span>Rincian Biaya (SPA & SPP) Per Gelombang:</span>
                 </h4>
                 <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                  Tahun Akademik 2026 / 2027
+                  Tahun Akademik 2027 / 2028
                 </span>
               </div>
 
@@ -387,12 +387,12 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
                   Biaya Pendidikan & Persyaratan Kelas Karyawan
                 </h3>
                 <p className="text-xs text-amber-100">
-                  Sekolah Tinggi Arsitektur YKPN (STARS YKPN) Yogyakarta
+                  Sekolah Tinggi Arsitektur YKPN (STARS YKPN) Yogyakarta • T.A. 2027 / 2028
                 </p>
               </div>
             </div>
             <span className="self-start sm:self-auto text-xs bg-black/20 text-amber-200 font-bold px-3 py-1 rounded-full border border-amber-400/30">
-              Jalur Karyawan
+              Jalur Karyawan • T.A. 2027/2028
             </span>
           </div>
 

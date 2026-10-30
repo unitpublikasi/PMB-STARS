@@ -158,13 +158,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span className="px-2.5 py-1 rounded-md bg-blue-900 text-amber-400 font-bold text-xs uppercase tracking-wide">
                 Portal Administrator
               </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+                T.A. 2027 / 2028
+              </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Database Cloud Firestore Aktif
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-              Data Calon Mahasiswa Baru
+              Data Calon Mahasiswa Baru (T.A. 2027/2028)
             </h1>
             <p className="text-sm text-slate-600 mt-1">
               Kelola seluruh formulir pendaftaran Kelas Reguler dan Kelas Karyawan, serta lakukan ekspor ke PDF & Excel.

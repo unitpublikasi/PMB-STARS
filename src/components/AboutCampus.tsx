@@ -90,13 +90,13 @@ export const AboutCampus: React.FC<AboutCampusProps> = ({ onBackToForm }) => {
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-blue-200/90 shadow-md space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Informasi Resmi PMB</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Informasi Resmi PMB • T.A. 2027 / 2028</span>
             <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
               Biaya Pendidikan & Persyaratan Kelas Reguler
             </h3>
           </div>
           <span className="self-start sm:self-auto text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1 rounded-full border border-blue-200">
-            Jalur Reguler
+            Jalur Reguler • T.A. 2027/2028
           </span>
         </div>
 
@@ -155,13 +155,13 @@ export const AboutCampus: React.FC<AboutCampusProps> = ({ onBackToForm }) => {
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-amber-200/90 shadow-md space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Informasi Resmi PMB</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Informasi Resmi PMB • T.A. 2027 / 2028</span>
             <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
               Biaya Pendidikan & Persyaratan Kelas Karyawan
             </h3>
           </div>
           <span className="self-start sm:self-auto text-xs bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full border border-amber-200">
-            Jalur Karyawan
+            Jalur Karyawan • T.A. 2027/2028
           </span>
         </div>
 

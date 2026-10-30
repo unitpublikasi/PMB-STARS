@@ -81,10 +81,10 @@ export function exportToExcel(registrations: Registration[]): void {
   worksheet['!cols'] = colWidths;
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendaftar STARS YKPN');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'PMB STARS 2027-2028');
 
   const today = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(workbook, `Data_Pendaftar_STARS_YKPN_${today}.xlsx`);
+  XLSX.writeFile(workbook, `Data_Pendaftar_STARS_YKPN_TA_2027_2028_${today}.xlsx`);
 }
 
 /**
@@ -124,7 +124,7 @@ export function exportToPdf(registrations: Registration[]): void {
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('REKAPITULASI RESMI DATA PENDAFTARAN MAHASISWA BARU (PMB)', 14, 18);
+  doc.text('REKAPITULASI RESMI DATA PENDAFTARAN MAHASISWA BARU (PMB) • TAHUN AKADEMIK 2027/2028', 14, 18);
 
   // Print info on right header
   doc.setFontSize(8);
@@ -207,7 +207,7 @@ export function exportToPdf(registrations: Registration[]): void {
   });
 
   const today = new Date().toISOString().split('T')[0];
-  doc.save(`Laporan_PMB_STARS_YKPN_${today}.pdf`);
+  doc.save(`Laporan_PMB_STARS_YKPN_TA_2027_2028_${today}.pdf`);
 }
 
 /**
@@ -233,9 +233,9 @@ export function exportSingleRegistrationPdf(reg: Registration): void {
   doc.setFont('helvetica', 'bold');
   doc.text('SEKOLAH TINGGI ARSITEKTUR YKPN YOGYAKARTA', 105, 14, { align: 'center' });
 
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
-  doc.text('TANDA BUKTI PENDAFTARAN MAHASISWA BARU (PMB)', 105, 22, { align: 'center' });
+  doc.text('TANDA BUKTI PENDAFTARAN MAHASISWA BARU (PMB) • T.A. 2027 / 2028', 105, 22, { align: 'center' });
 
   doc.setFontSize(8);
   doc.setTextColor(203, 213, 225);
