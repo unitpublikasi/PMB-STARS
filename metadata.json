@@ -1,0 +1,6 @@
+{
+  "name": "PMB STARS YKPN Yogyakarta",
+  "description": "Sistem Informasi & Formulir Pendaftaran Mahasiswa Baru Kelas Reguler dan Karyawan Sekolah Tinggi Arsitektur YKPN Yogyakarta lengkap dengan Portal Admin, Export Excel dan PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

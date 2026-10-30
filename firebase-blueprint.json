@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "Registration": {
+      "title": "Registration",
+      "description": "Formulir pendaftaran mahasiswa baru STARS YKPN Yogyakarta (Kelas Reguler atau Kelas Karyawan)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Nomor Registrasi resmi pendaftaran, e.g. REG-YKPN-2026-001"
+        },
+        "program": {
+          "type": "string",
+          "enum": ["reguler", "karyawan"],
+          "description": "Program pilihan: reguler atau karyawan"
+        },
+        "namaLengkap": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200,
+          "description": "Nama lengkap calon mahasiswa"
+        },
+        "alamat": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500,
+          "description": "Alamat domisili lengkap"
+        },
+        "asalSekolahOrPerusahaan": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200,
+          "description": "Asal sekolah SMA/SMK atau perusahaan tempat kerja"
+        },
+        "noWaAktif": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20,
+          "description": "Nomor WhatsApp aktif calon mahasiswa"
+        },
+        "noWaOrtu": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20,
+          "description": "Nomor WhatsApp orangtua atau wali"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Alamat email aktif"
+        },
+        "alasanMendaftar": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 2000,
+          "description": "Alasan memilih STARS YKPN"
+        },
+        "infoDapatDari": {
+          "type": "string",
+          "description": "Sumber informasi mengenai STARS YKPN"
+        },
+        "infoDapatDariDetail": {
+          "type": "string",
+          "description": "Keterangan tambahan jika memilih Lainnya"
+        },
+        "gelombang": {
+          "type": "string",
+          "description": "Pilihan gelombang pendaftaran jika berlaku"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["baru", "diverifikasi", "dihubungi", "diterima"],
+          "description": "Status tindak lanjut pendaftaran"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pendaftaran dibuat"
+        },
+        "catatanAdmin": {
+          "type": "string",
+          "description": "Catatan internal panitia PMB"
+        }
+      },
+      "required": [
+        "id",
+        "program",
+        "namaLengkap",
+        "alamat",
+        "asalSekolahOrPerusahaan",
+        "noWaAktif",
+        "noWaOrtu",
+        "email",
+        "alasanMendaftar",
+        "infoDapatDari",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Koleksi data formulir pendaftaran calon mahasiswa baru"
+    }
+  }
+}
