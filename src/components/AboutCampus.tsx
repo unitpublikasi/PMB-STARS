@@ -1,11 +1,13 @@
 import React from 'react';
-import { Building2, Compass, Award, BookOpen, Clock, MapPin, Phone, Mail, Globe, CheckCircle, FileCheck, CreditCard } from 'lucide-react';
+import { Building2, Compass, Award, BookOpen, Clock, MapPin, Phone, Mail, Globe, CheckCircle, FileCheck, CreditCard, MessageSquare } from 'lucide-react';
 import { 
   BIAYA_KELAS_REGULER, 
   PERSYARATAN_KELAS_REGULER, 
   BIAYA_KELAS_KARYAWAN, 
-  PERSYARATAN_KELAS_KARYAWAN 
+  PERSYARATAN_KELAS_KARYAWAN,
+  KONTAK_PANITIA_PMB
 } from '../data/initialData';
+
 
 interface AboutCampusProps {
   onBackToForm: () => void;
@@ -233,14 +235,32 @@ export const AboutCampus: React.FC<AboutCampusProps> = ({ onBackToForm }) => {
             </div>
           </div>
 
-          <div className="flex gap-3 items-start">
+          <div className="flex gap-3 items-start col-span-1 sm:col-span-2 lg:col-span-1">
             <Phone className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-white text-sm">Kontak & WhatsApp PMB</p>
-              <p className="mt-1 text-slate-400">Hotline: (0274) 560000</p>
-              <p className="text-slate-400">WhatsApp PMB: 0812-3456-7890</p>
+            <div className="space-y-1.5 w-full">
+              <p className="font-bold text-white text-sm">Kontak Panitia PMB STARS YKPN</p>
+              <div className="space-y-1 text-xs text-slate-300">
+                {KONTAK_PANITIA_PMB.map((panitia, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5">
+                    <div>
+                      <span className="font-semibold text-slate-200">{panitia.nama}:</span>{' '}
+                      <span className="font-mono text-amber-300">{panitia.nomor}</span>
+                    </div>
+                    <a
+                      href={`${panitia.waLink}?text=Halo%20Bapak%20${encodeURIComponent(panitia.nama)},%20saya%20ingin%20konsultasi%20mengenai%20Penerimaan%20Mahasiswa%20Baru%20STARS%20YKPN.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[10px]"
+                    >
+                      <MessageSquare className="w-2.5 h-2.5" />
+                      <span>WA</span>
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
 
           <div className="flex gap-3 items-start">
             <Globe className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />

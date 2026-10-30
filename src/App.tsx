@@ -203,14 +203,20 @@ export default function App() {
             </div>
 
             <div>
-              <h4 className="text-white font-bold text-sm mb-3">Kampus & Lokasi</h4>
-              <p className="text-slate-400 leading-relaxed mb-2">
-                Jl. Gagak Rimang No. 2-4, Balapan, Klitren, Kec. Gondokusuman, Kota Yogyakarta, Daerah Istimewa Yogyakarta 55222
+              <h4 className="text-white font-bold text-sm mb-3">Panitia PMB STARS YKPN</h4>
+              <p className="text-slate-400 leading-relaxed mb-2 text-xs">
+                Jl. Gagak Rimang No. 2-4, Balapan, Klitren, Gondokusuman, Yogyakarta 55222
               </p>
-              <p className="text-slate-400">
+              <ul className="space-y-1 text-xs text-slate-300 mb-2">
+                <li>• <strong>Aulia Abrar:</strong> <a href="https://wa.me/6281262361981" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">081262361981</a></li>
+                <li>• <strong>Adibowo:</strong> <a href="https://wa.me/628122777205" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">08122777205</a></li>
+                <li>• <strong>Ardiansyah:</strong> <a href="https://wa.me/6285729635018" target="_blank" rel="noopener noreferrer" className="font-mono text-amber-300 hover:underline">085729635018</a></li>
+              </ul>
+              <p className="text-slate-400 text-xs">
                 Email: <span className="text-slate-200">pmb@starsykpn.ac.id</span>
               </p>
             </div>
+
 
             <div>
               <h4 className="text-white font-bold text-sm mb-3">Akses & Informasi</h4>

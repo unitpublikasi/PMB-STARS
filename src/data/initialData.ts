@@ -151,4 +151,37 @@ export const PERSYARATAN_KELAS_KARYAWAN: string[] = [
   'Surat Keterangan Kerja',
 ];
 
+export interface PanitiaKontak {
+  nama: string;
+  nomor: string;
+  waLink: string;
+  telLink: string;
+  role: string;
+}
+
+export const KONTAK_PANITIA_PMB: PanitiaKontak[] = [
+  {
+    nama: 'Aulia Abrar',
+    nomor: '081262361981',
+    waLink: 'https://wa.me/6281262361981',
+    telLink: 'tel:081262361981',
+    role: 'Panitia PMB STARS YKPN',
+  },
+  {
+    nama: 'Adibowo',
+    nomor: '08122777205',
+    waLink: 'https://wa.me/628122777205',
+    telLink: 'tel:08122777205',
+    role: 'Panitia PMB STARS YKPN',
+  },
+  {
+    nama: 'Ardiansyah',
+    nomor: '085729635018',
+    waLink: 'https://wa.me/6285729635018',
+    telLink: 'tel:085729635018',
+    role: 'Panitia PMB STARS YKPN',
+  },
+];
+
+
 

@@ -14,11 +14,17 @@ import {
   HelpCircle, 
   School,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Check,
   CreditCard,
   CalendarClock,
-  FileCheck
+  FileCheck,
+  PhoneCall,
+  UserCheck,
+  Sparkles,
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 import { ProgramType, RegistrationFormData, Registration } from '../types';
 import { 
@@ -26,7 +32,8 @@ import {
   BIAYA_KELAS_REGULER, 
   PERSYARATAN_KELAS_REGULER, 
   BIAYA_KELAS_KARYAWAN, 
-  PERSYARATAN_KELAS_KARYAWAN 
+  PERSYARATAN_KELAS_KARYAWAN,
+  KONTAK_PANITIA_PMB
 } from '../data/initialData';
 import { exportSingleRegistrationPdf } from '../utils/exportUtils';
 import { createRegistrationCloud } from '../utils/firestoreService';
@@ -36,8 +43,11 @@ interface PublicFormProps {
 }
 
 export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
-  const [program, setProgram] = useState<ProgramType>('reguler');
+  // null by default: rincian dan form sembunyikan dahulu sampai diklik pilihan kelasnya
+  const [selectedProgram, setSelectedProgram] = useState<ProgramType | null>(null);
   
+  const program: ProgramType = selectedProgram ?? 'reguler';
+
   const [formData, setFormData] = useState<RegistrationFormData>({
     program: 'reguler',
     namaLengkap: '',
@@ -56,15 +66,37 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRegistration, setSubmittedRegistration] = useState<Registration | null>(null);
 
-  // Switch program tab
-  const handleProgramChange = (newProgram: ProgramType) => {
-    setProgram(newProgram);
+  // Switch or select program
+  const handleSelectProgram = (newProgram: ProgramType) => {
+    setSelectedProgram(newProgram);
     setFormData(prev => ({
       ...prev,
       program: newProgram,
-      gelombang: newProgram === 'karyawan' ? (prev.gelombang || 'Gel. 1 (01 Des 2026 - 30 April 2027)') : undefined,
+      gelombang: newProgram === 'reguler' ? (prev.gelombang || 'Gel. 1 (01 Des 2026 - 30 April 2027)') : undefined,
+    }));
+    // Scroll to details section smoothly
+    setTimeout(() => {
+      const el = document.getElementById('rincian-biaya-dan-form');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 80);
+  };
+
+  const handleProgramChange = (newProgram: ProgramType) => {
+    setSelectedProgram(newProgram);
+    setFormData(prev => ({
+      ...prev,
+      program: newProgram,
+      gelombang: newProgram === 'reguler' ? (prev.gelombang || 'Gel. 1 (01 Des 2026 - 30 April 2027)') : undefined,
     }));
   };
+
+  const handleBackToProgramSelection = () => {
+    setSelectedProgram(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
 
   const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -179,6 +211,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
 
   const handleNewRegistration = () => {
     setSubmittedRegistration(null);
+    setSelectedProgram(null);
     setFormData({
       program: 'reguler',
       namaLengkap: '',
@@ -194,6 +227,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -221,64 +255,254 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
         </p>
       </div>
 
-      {/* Program Selection Segmented Buttons */}
-      <div className="max-w-3xl mx-auto mb-8">
-        <div className="bg-slate-200/80 p-1.5 rounded-2xl flex flex-col sm:flex-row gap-2 shadow-inner">
-          <button
-            type="button"
-            onClick={() => handleProgramChange('reguler')}
-            className={`flex-1 flex items-center justify-center gap-3 py-3.5 px-5 rounded-xl transition-all text-left ${
-              program === 'reguler'
-                ? 'bg-white text-slate-900 shadow-md ring-1 ring-slate-200 font-bold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 font-medium'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${program === 'reguler' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">1. Kelas Reguler</span>
-                {program === 'reguler' && (
-                  <span className="text-[10px] bg-blue-600 text-white font-semibold px-2 py-0.5 rounded-full">
-                    Aktif
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
-                Lulusan SMA / SMK / MA (Kuliah Reguler Pagi & Siang)
-              </p>
-            </div>
-          </button>
+      {/* Jika belum klik pilihan kelas, tampilkan seleksi kelas & kontak panitia */}
+      {!selectedProgram ? (
+        <div className="max-w-4xl mx-auto space-y-10 animate-fadeIn">
+          {/* Instruksi Pilihan Kelas */}
+          <div className="text-center space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-400/15 border border-amber-400/30 px-3.5 py-1.5 rounded-full shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Langkah 1: Silakan Pilih Kelas Kuliah Terlebih Dahulu</span>
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Pilih Program & Jalur Perkuliahan Anda
+            </h2>
+            <p className="text-sm text-slate-600 max-w-xl mx-auto">
+              Klik salah satu pilihan kelas di bawah untuk menampilkan rincian biaya kuliah (SPA & SPP), berkas persyaratan, serta membuka formulir pendaftaran resmi.
+            </p>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => handleProgramChange('karyawan')}
-            className={`flex-1 flex items-center justify-center gap-3 py-3.5 px-5 rounded-xl transition-all text-left ${
-              program === 'karyawan'
-                ? 'bg-white text-slate-900 shadow-md ring-1 ring-slate-200 font-bold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 font-medium'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${program === 'karyawan' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">2. Kelas Karyawan</span>
-                {program === 'karyawan' && (
-                  <span className="text-[10px] bg-amber-600 text-white font-semibold px-2 py-0.5 rounded-full">
-                    Aktif
+          {/* 2 Pilihan Kelas Kartu Interaktif */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Kartu 1: Kelas Reguler */}
+            <div 
+              onClick={() => handleSelectProgram('reguler')}
+              className="group cursor-pointer bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200/90 hover:border-blue-500 shadow-lg hover:shadow-2xl hover:shadow-blue-900/15 transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <GraduationCap className="w-7 h-7" />
+                  </div>
+                  <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+                    S1 Penuh Waktu
                   </span>
-                )}
+                </div>
+
+                <h3 className="text-2xl font-extrabold text-slate-900 group-hover:text-blue-700 transition-colors">
+                  1. Kelas Reguler
+                </h3>
+                <p className="text-xs font-semibold text-blue-600 mt-1">
+                  Perkuliahan Pagi & Siang (Senin – Jumat)
+                </p>
+
+                <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                  Dirancang khusus bagi lulusan SMA / SMK / MA sederajat yang ingin fokus penuh menempuh perkuliahan arsitektur dengan studio desain terpadu.
+                </p>
+
+                {/* Ringkasan Biaya */}
+                <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span>SPA (Awal Masuk):</span>
+                    <span className="font-bold text-slate-900 font-mono">Mulai Rp 4.000.000,-</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span>SPP Per Semester:</span>
+                    <span className="font-bold text-blue-800 font-mono">Rp 6.000.000,-</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-500 pt-2 border-t border-slate-200 text-[11px]">
+                    <span>Gelombang Terbuka:</span>
+                    <span className="font-semibold text-emerald-700">3 Gelombang Pendaftaran</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
-                Karyawan / Profesional / Wirausaha (Jadwal Fleksibel)
-              </p>
+
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl bg-blue-900 group-hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all group-hover:gap-3"
+                >
+                  <span>Pilih Kelas Reguler & Lihat Form</span>
+                  <ArrowRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
             </div>
-          </button>
+
+            {/* Kartu 2: Kelas Karyawan */}
+            <div 
+              onClick={() => handleSelectProgram('karyawan')}
+              className="group cursor-pointer bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200/90 hover:border-amber-500 shadow-lg hover:shadow-2xl hover:shadow-amber-900/15 transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-500/15 to-transparent rounded-bl-full pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
+                    <Briefcase className="w-7 h-7" />
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1 rounded-full">
+                    S1 Jadwal Fleksibel
+                  </span>
+                </div>
+
+                <h3 className="text-2xl font-extrabold text-slate-900 group-hover:text-amber-700 transition-colors">
+                  2. Kelas Karyawan
+                </h3>
+                <p className="text-xs font-semibold text-amber-700 mt-1">
+                  Perkuliahan Sore / Malam & Hybrid (Fleksibel)
+                </p>
+
+                <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                  Solusi ideal bagi pekerja kantor, drafter, pengawas proyek, kontraktor, ASN, wirausaha, serta lulusan D3 yang ingin kuliah Sarjana Arsitektur tanpa mengganggu karir.
+                </p>
+
+                {/* Ringkasan Biaya */}
+                <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span>SPA (Awal Masuk):</span>
+                    <span className="font-bold text-slate-900 font-mono">{BIAYA_KELAS_KARYAWAN.spa}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-700">
+                    <span>SPP Per Semester:</span>
+                    <span className="font-bold text-amber-800 font-mono">{BIAYA_KELAS_KARYAWAN.spp}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-500 pt-2 border-t border-slate-200 text-[11px]">
+                    <span>Persyaratan Dokumen:</span>
+                    <span className="font-semibold text-amber-900">11 Berkas (Termasuk CV & Portofolio)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl bg-amber-600 group-hover:bg-amber-700 text-slate-950 font-bold text-sm shadow-md transition-all group-hover:gap-3"
+                >
+                  <span>Pilih Kelas Karyawan & Lihat Form</span>
+                  <ArrowRight className="w-4 h-4 text-slate-950 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Kontak Panitia PMB STARS YKPN */}
+          <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-slate-800">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 text-xs font-semibold mb-2">
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  <span>Kontak Resmi PMB STARS YKPN</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+                  Kontak Panitia PMB STARS YKPN
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                  Butuh konsultasi lebih lanjut seputar pendaftaran atau pemilihan kelas? Hubungi panitia PMB kami:
+                </p>
+              </div>
+              <span className="text-xs text-slate-300 bg-slate-800/90 px-3.5 py-1.5 rounded-xl border border-slate-700 font-medium">
+                Siap Melayani Konsultasi
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {KONTAK_PANITIA_PMB.map((panitia, idx) => (
+                <div 
+                  key={idx}
+                  className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/50 hover:bg-white/10 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-sm">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-white text-base">{panitia.nama}</h4>
+                        <p className="text-xs text-slate-400">{panitia.role}</p>
+                      </div>
+                    </div>
+                    <div className="bg-black/20 px-3 py-2 rounded-xl my-2 border border-white/5">
+                      <p className="text-[11px] text-slate-400">Nomor WhatsApp / Telp:</p>
+                      <p className="font-mono text-base font-bold text-amber-300">{panitia.nomor}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-white/10">
+                    <a
+                      href={`${panitia.waLink}?text=Halo%20Bapak%20${encodeURIComponent(panitia.nama)},%20saya%20ingin%20konsultasi%20mengenai%20Penerimaan%20Mahasiswa%20Baru%20STARS%20YKPN%20Yogyakarta.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Chat WhatsApp</span>
+                    </a>
+                    <a
+                      href={panitia.telLink}
+                      className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-colors"
+                      title={`Hubungi telepon ${panitia.nama}`}
+                    >
+                      <Phone className="w-4 h-4 text-amber-400" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Jika sudah klik pilihan kelas, tampilkan rincian biaya, persyaratan, dan form */
+        <div id="rincian-biaya-dan-form" className="space-y-8 animate-fadeIn">
+          {/* Top Control Bar: Active Class & Back Button */}
+          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-4 shadow-md border border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBackToProgramSelection}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 text-xs font-bold transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                <span>Ganti Pilihan Kelas</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 hidden sm:inline">Pilihan Kelas:</span>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                  program === 'reguler' 
+                    ? 'bg-blue-100 text-blue-900 border border-blue-200' 
+                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                }`}>
+                  {program === 'reguler' ? '1. Kelas Reguler (S1 Penuh Waktu)' : '2. Kelas Karyawan (S1 Sore/Fleksibel)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Switch to the other program */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => handleProgramChange('reguler')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  program === 'reguler'
+                    ? 'bg-blue-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Kelas Reguler
+              </button>
+              <button
+                type="button"
+                onClick={() => handleProgramChange('karyawan')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  program === 'karyawan'
+                    ? 'bg-amber-600 text-slate-950 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Kelas Karyawan
+              </button>
+            </div>
+          </div>
+
 
       {/* Informasi Biaya & Persyaratan Kelas Reguler */}
       {program === 'reguler' && (
@@ -825,10 +1049,39 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
         </form>
       </div>
 
+          {/* Quick Panitia Help Banner below form */}
+          <div className="max-w-3xl mx-auto p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white shadow-lg border border-blue-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-400/20 text-amber-300 shrink-0">
+                <PhoneCall className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm text-white">Butuh bantuan pengisian atau berkas?</p>
+                <p className="text-xs text-slate-300">Hubungi Panitia PMB STARS YKPN yang siap mendampingi Anda.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              {KONTAK_PANITIA_PMB.map((panitia, idx) => (
+                <a
+                  key={idx}
+                  href={`${panitia.waLink}?text=Halo%20Bapak%20${encodeURIComponent(panitia.nama)},%20saya%20sedang%20mengisi%20formulir%20PMB%20STARS%20YKPN%20(${program === 'reguler' ? 'Kelas%20Reguler' : 'Kelas%20Karyawan'})%20dan%20ingin%20bertanya.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WA {panitia.nama.split(' ')[0]}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {submittedRegistration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center relative overflow-hidden max-h-[92vh] overflow-y-auto">
             {/* Top decorative stripe */}
             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
 
@@ -849,7 +1102,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
             </p>
 
             {/* Registration Ticket box */}
-            <div className="my-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left">
+            <div className="my-5 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left">
               <div className="flex justify-between items-center border-b border-slate-200 pb-2 mb-2">
                 <span className="text-xs font-semibold text-slate-500">Nomor Registrasi:</span>
                 <span className="font-mono font-bold text-blue-900 text-base">{submittedRegistration.id}</span>
@@ -860,13 +1113,50 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
                   <p><strong>Gelombang:</strong> <span className="text-amber-800 font-bold">{submittedRegistration.gelombang}</span></p>
                 )}
                 <p><strong>{submittedRegistration.program === 'reguler' ? 'Asal Sekolah' : 'Asal Sekolah/Perusahaan'}:</strong> {submittedRegistration.asalSekolahOrPerusahaan}</p>
-                <p><strong>No. WA:</strong> {submittedRegistration.noWaAktif}</p>
+                <p><strong>No. WA Calon:</strong> {submittedRegistration.noWaAktif}</p>
                 <p><strong>Email:</strong> {submittedRegistration.email}</p>
               </div>
             </div>
 
+            {/* Hubungi Panitia PMB WhatsApp */}
+            <div className="my-5 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left space-y-2.5">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-emerald-700" />
+                <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                  Konfirmasi ke WhatsApp Panitia PMB (Pilih Panitia):
+                </h4>
+              </div>
+              <p className="text-[11px] text-slate-600">
+                Silakan hubungi salah satu panitia PMB resmi STARS YKPN berikut untuk konfirmasi dan proses verifikasi berkas:
+              </p>
+              <div className="space-y-2 pt-1">
+                {KONTAK_PANITIA_PMB.map((panitia, idx) => (
+                  <a
+                    key={idx}
+                    href={`${panitia.waLink}?text=Halo%20Bapak%20${encodeURIComponent(panitia.nama)},%20saya%20sudah%20mendaftar%20PMB%20STARS%20YKPN%20T.A.%202027/2028%20dengan%20No%20Registrasi%20${submittedRegistration.id}%20atas%20nama%20${encodeURIComponent(submittedRegistration.namaLengkap)}%20(${submittedRegistration.program === 'reguler' ? 'Kelas%20Reguler' : 'Kelas%20Karyawan'}).%20Mohon%20informasi%20tahap%20selanjutnya.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-emerald-300/80 hover:border-emerald-600 hover:shadow-sm transition-all text-xs text-slate-800 font-medium"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-[10px]">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block">{panitia.nama}</span>
+                        <span className="font-mono text-[11px] text-slate-500">{panitia.nomor}</span>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                      Chat WA →
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div className="space-y-3">
+            <div className="space-y-2.5 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => exportSingleRegistrationPdf(submittedRegistration)}
@@ -876,20 +1166,10 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
                 <span>Unduh Tanda Bukti Pendaftaran (PDF)</span>
               </button>
 
-              <a
-                href={`https://wa.me/6281234567890?text=Halo%20Panitia%20PMB%20STARS%20YKPN,%20saya%20sudah%20mendaftar%20dengan%20No%20Registrasi%20${submittedRegistration.id}%20atas%20nama%20${encodeURIComponent(submittedRegistration.namaLengkap)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Konfirmasi ke WhatsApp Panitia PMB</span>
-              </a>
-
               <button
                 type="button"
                 onClick={handleNewRegistration}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-semibold transition-colors"
               >
                 <span>Isi Formulir Pendaftaran Baru Lainnya</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -898,6 +1178,7 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
