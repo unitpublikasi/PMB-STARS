@@ -10,7 +10,9 @@ import {
   Cloud, 
   Menu, 
   X,
-  MessageSquare
+  MessageSquare,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { AdminUser } from '../types';
 import { KONTAK_PANITIA_PMB } from '../data/initialData';
@@ -97,6 +99,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Info className="w-4 h-4" />
               <span>Tentang STARS YKPN</span>
             </button>
+
+            {/* Menu Website Kampus */}
+            <a
+              href="https://starsykpn.ac.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-amber-400 hover:bg-slate-800/80 transition-all border border-slate-700/60 hover:border-amber-400/50"
+              title="Buka Website Resmi Kampus STARS YKPN (starsykpn.ac.id)"
+            >
+              <Globe className="w-4 h-4 text-amber-400" />
+              <span>Website Kampus</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </a>
 
             {/* Cloud Firestore Status Badge */}
             <div 
@@ -211,6 +226,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <span className="text-xs opacity-75">Biaya & Profil</span>
           </button>
+
+          {/* Website Kampus in Mobile Menu */}
+          <a
+            href="https://starsykpn.ac.id"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition-all border border-slate-800/80"
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5 text-amber-400" />
+              <span>Website Kampus</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+              <span>starsykpn.ac.id</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+          </a>
 
           <div className="pt-2 border-t border-slate-800">
             {adminUser ? (

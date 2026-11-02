@@ -29,7 +29,7 @@ import {
   subscribeToLiveRegistrations, 
   testFirestoreConnection 
 } from './utils/firestoreService';
-import { Building2, Heart, ShieldCheck, Phone, Mail, MapPin, Cloud, CheckCircle } from 'lucide-react';
+import { Building2, Heart, ShieldCheck, Phone, Mail, MapPin, Cloud, CheckCircle, Globe } from 'lucide-react';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'form' | 'admin' | 'info'>('form');
@@ -268,6 +268,17 @@ export default function App() {
             <div>
               <h4 className="text-white font-bold text-sm mb-3">Akses & Informasi</h4>
               <ul className="space-y-2.5">
+                <li>
+                  <a
+                    href="https://starsykpn.ac.id"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-400 transition-colors text-left py-0.5"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Website Resmi Kampus (starsykpn.ac.id)</span>
+                  </a>
+                </li>
                 <li>
                   <button
                     onClick={() => handleNavigate('form')}

@@ -24,7 +24,8 @@ import {
   UserCheck,
   Sparkles,
   ChevronRight,
-  Clock
+  Clock,
+  Lock
 } from 'lucide-react';
 import { ProgramType, RegistrationFormData, Registration } from '../types';
 import { 
@@ -37,6 +38,7 @@ import {
 } from '../data/initialData';
 import { exportSingleRegistrationPdf } from '../utils/exportUtils';
 import { createRegistrationCloud } from '../utils/firestoreService';
+import { MathCaptchaModal } from './MathCaptchaModal';
 
 interface PublicFormProps {
   onSubmitSuccess: (newRegistration: Registration) => void;
@@ -65,6 +67,29 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRegistration, setSubmittedRegistration] = useState<Registration | null>(null);
+
+  // Anti-bot Math Captcha verification for front page entry
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('pmb_human_verified_v1') === 'true';
+  });
+  const [isCaptchaModalOpen, setIsCaptchaModalOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('pmb_human_verified_v1') !== 'true';
+  });
+  const [captchaBannerNotice, setCaptchaBannerNotice] = useState<string | null>(null);
+
+  const handleCaptchaSuccess = () => {
+    setIsCaptchaVerified(true);
+    setIsCaptchaModalOpen(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('pmb_human_verified_v1', 'true');
+    }
+    setCaptchaBannerNotice('Verifikasi anti-bot berhasil! Akses formulir PMB terbuka.');
+    setTimeout(() => {
+      setCaptchaBannerNotice(null);
+    }, 4500);
+  };
 
   // Switch or select program
   const handleSelectProgram = (newProgram: ProgramType) => {
@@ -166,6 +191,10 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isCaptchaVerified) {
+      setIsCaptchaModalOpen(true);
+      return;
+    }
     if (!validate()) {
       // Scroll to first error
       window.scrollTo({ top: 380, behavior: 'smooth' });
@@ -253,6 +282,61 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
         <p className="mt-2 text-sm text-slate-500 max-w-2xl mx-auto">
           Silakan lengkapi formulir pendaftaran resmi di bawah ini dengan data yang benar dan dapat dipertanggungjawabkan.
         </p>
+      </div>
+
+      {/* Anti-Bot Verification Status Bar */}
+      <div className="max-w-4xl mx-auto mb-8">
+        {captchaBannerNotice && (
+          <div className="mb-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-semibold flex items-center justify-between gap-2 animate-fadeIn shadow-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>{captchaBannerNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCaptchaBannerNotice(null)}
+              className="text-emerald-600 hover:text-emerald-900 text-xs px-2 py-0.5 rounded-lg hover:bg-emerald-100"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 sm:px-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              isCaptchaVerified 
+                ? 'bg-emerald-100 text-emerald-700' 
+                : 'bg-amber-100 text-amber-700'
+            }`}>
+              {isCaptchaVerified ? <ShieldCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+            </div>
+            <div>
+              <span className="font-bold text-slate-800 block text-xs sm:text-sm">
+                {isCaptchaVerified 
+                  ? 'Keamanan Akses: Terverifikasi (Anti-Bot Aktif)' 
+                  : 'Keamanan Akses: Menunggu Verifikasi Anti-Bot'}
+              </span>
+              <p className="text-[11px] text-slate-500">
+                {isCaptchaVerified 
+                  ? 'Sistem memastikan Anda adalah calon mahasiswa / pengunjung asli (bukan bot otomatis).' 
+                  : 'Mohon selesaikan soal matematika sederhana untuk membuka formulir pendaftaran.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCaptchaModalOpen(true)}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-colors shrink-0 ${
+              isCaptchaVerified
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                : 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm'
+            }`}
+          >
+            {isCaptchaVerified ? 'Uji Ulang Captcha' : 'Verifikasi Sekarang →'}
+          </button>
+        </div>
       </div>
 
       {/* Jika belum klik pilihan kelas, tampilkan seleksi kelas & kontak panitia */}
@@ -1016,6 +1100,41 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
             )}
           </div>
 
+          {/* Anti-Bot Verification Status in Form */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                isCaptchaVerified 
+                  ? 'bg-emerald-100 text-emerald-700' 
+                  : 'bg-amber-100 text-amber-700'
+              }`}>
+                {isCaptchaVerified ? <ShieldCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div>
+                <span className="font-bold text-slate-800 block text-xs">
+                  {isCaptchaVerified ? 'Anti-Bot: Terverifikasi (Bukan Bot)' : 'Anti-Bot: Belum Terverifikasi'}
+                </span>
+                <span className="text-slate-500 text-[11px]">
+                  {isCaptchaVerified 
+                    ? 'Perhitungan matematika telah berhasil diverifikasi oleh sistem.' 
+                    : 'Mohon selesaikan soal matematika untuk mengirim formulir.'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCaptchaModalOpen(true)}
+              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-colors shrink-0 ${
+                isCaptchaVerified
+                  ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                  : 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm'
+              }`}
+            >
+              {isCaptchaVerified ? 'Uji Ulang Soal' : 'Selesaikan Captcha →'}
+            </button>
+          </div>
+
           {/* Form Actions */}
           <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <button
@@ -1177,6 +1296,14 @@ export const PublicForm: React.FC<PublicFormProps> = ({ onSubmitSuccess }) => {
           </div>
         </div>
       )}
+
+      {/* Math Anti-Bot Captcha Modal */}
+      <MathCaptchaModal
+        isOpen={isCaptchaModalOpen}
+        onSuccess={handleCaptchaSuccess}
+        onClose={() => setIsCaptchaModalOpen(false)}
+        canDismiss={isCaptchaVerified}
+      />
 
     </div>
   );
