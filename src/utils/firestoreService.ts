@@ -1,6 +1,7 @@
 import { 
   collection, 
   doc, 
+  getDoc,
   getDocs, 
   setDoc, 
   updateDoc, 
@@ -11,7 +12,15 @@ import {
 import { db } from '../firebase';
 import { Registration, RegistrationFormData, RegistrationStatus } from '../types';
 import { INITIAL_REGISTRATIONS } from '../data/initialData';
-import { getStoredRegistrations, saveRegistrations } from './storage';
+import { 
+  getStoredRegistrations, 
+  saveRegistrations, 
+  getDeletedRegistrationIds, 
+  markRegistrationAsDeleted,
+  clearDeletedRegistrationIds,
+  deleteRegistration,
+  resetToSampleData
+} from './storage';
 
 export enum OperationType {
   CREATE = 'create',
@@ -96,26 +105,66 @@ export async function testFirestoreConnection(): Promise<boolean> {
  */
 export async function fetchAllRegistrations(): Promise<Registration[]> {
   const colPath = 'registrations';
+  const initMetaDoc = doc(db, '_metadata', 'init');
+
   try {
     const colRef = collection(db, colPath);
+    
+    // Check if database was already initialized
+    let alreadySeeded = false;
+    try {
+      const metaSnap = await getDoc(initMetaDoc);
+      if (metaSnap.exists() && metaSnap.data()?.seeded) {
+        alreadySeeded = true;
+      }
+    } catch {
+      // Proceed gracefully
+    }
+
     const snapshot = await getDocs(colRef);
 
-    if (snapshot.empty) {
-      // First time initialization: seed Cloud Firestore with initial sample data
-      console.log('Firestore is empty. Seeding initial registrations to cloud...');
+    // Only seed initial sample data on the VERY FIRST time ever
+    if (snapshot.empty && !alreadySeeded) {
+      console.log('Firestore is unseeded. Seeding initial registrations to cloud...');
       const initial = INITIAL_REGISTRATIONS;
       for (const item of initial) {
         const cleaned = cleanPayload(item);
         await setDoc(doc(db, colPath, item.id), cleaned);
       }
+      try {
+        await setDoc(initMetaDoc, { seeded: true, initializedAt: new Date().toISOString() });
+      } catch (err) {
+        console.warn('Failed to record _metadata/init:', err);
+      }
       saveRegistrations(initial);
       return initial;
     }
 
+    // If already seeded and snapshot is empty, it means all records were deleted by admin.
+    if (snapshot.empty && alreadySeeded) {
+      saveRegistrations([]);
+      return [];
+    }
+
+    const deletedIds = getDeletedRegistrationIds();
     const items: Registration[] = [];
+
     snapshot.forEach(docSnap => {
+      const docId = docSnap.id;
       const data = docSnap.data() as Registration;
-      items.push(data);
+      const finalId = data.id || docId;
+
+      // Filter out any applicant explicitly deleted by admin
+      if (deletedIds.has(finalId) || deletedIds.has(docId)) {
+        // Asynchronously ensure deleted from Firestore as well
+        deleteDoc(doc(db, colPath, docId)).catch(() => {});
+        return;
+      }
+
+      items.push({
+        ...data,
+        id: finalId,
+      });
     });
 
     const sorted = sortRegistrationsDesc(items);
@@ -148,6 +197,9 @@ export async function createRegistrationCloud(formData: RegistrationFormData): P
     // 1. Direct write to Cloud Firestore
     await setDoc(doc(db, colPath, id), payload);
     console.log(`Successfully persisted registration ${id} to Cloud Firestore.`);
+    
+    // Ensure metadata init is marked
+    setDoc(doc(db, '_metadata', 'init'), { seeded: true, updatedAt: new Date().toISOString() }).catch(() => {});
   } catch (error) {
     console.error('Failed to save to Firestore directly:', error);
     try {
@@ -192,19 +244,65 @@ export async function updateRegistrationStatusCloud(
 }
 
 /**
- * Delete registration from Cloud Firestore and localStorage
+ * Delete registration permanently from Cloud Firestore and localStorage.
+ * Guarantees that upon browser refresh, the applicant does not reappear.
  */
-export async function deleteRegistrationCloud(id: string): Promise<void> {
+export async function deleteRegistrationCloud(id: string): Promise<boolean> {
   const colPath = 'registrations';
+  
+  // 1. Mark as deleted in persistent tracking set immediately
+  markRegistrationAsDeleted(id);
+  
+  // 2. Remove from local storage cache immediately
+  deleteRegistration(id);
+
+  // 3. Delete directly from Cloud Firestore
   try {
-    await deleteDoc(doc(db, colPath, id));
+    const docRef = doc(db, colPath, id);
+    await deleteDoc(docRef);
+    console.log(`Successfully permanently deleted registration ${id} from Cloud Firestore.`);
+    return true;
   } catch (error) {
-    console.warn('Failed to delete in Firestore:', error);
+    console.error(`Failed to delete registration ${id} from Cloud Firestore:`, error);
     try {
       handleFirestoreError(error, OperationType.DELETE, `${colPath}/${id}`);
     } catch {
       // Fallback
     }
+    return false;
+  }
+}
+
+/**
+ * Reset registrations to sample data both in Cloud Firestore and localStorage
+ */
+export async function resetRegistrationsToSampleCloud(): Promise<Registration[]> {
+  const colPath = 'registrations';
+  clearDeletedRegistrationIds();
+
+  try {
+    // 1. Delete existing documents from cloud collection
+    const snapshot = await getDocs(collection(db, colPath));
+    const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, colPath, d.id)));
+    await Promise.all(deletePromises);
+
+    // 2. Re-seed initial sample registrations
+    const initial = INITIAL_REGISTRATIONS;
+    for (const item of initial) {
+      await setDoc(doc(db, colPath, item.id), cleanPayload(item));
+    }
+
+    // 3. Mark init status
+    await setDoc(doc(db, '_metadata', 'init'), {
+      seeded: true,
+      lastResetAt: new Date().toISOString()
+    });
+
+    saveRegistrations(initial);
+    return initial;
+  } catch (err) {
+    console.warn('Could not reset Cloud Firestore, resetting local storage:', err);
+    return resetToSampleData();
   }
 }
 
@@ -221,9 +319,24 @@ export function subscribeToLiveRegistrations(
     return onSnapshot(
       colRef,
       (snapshot) => {
+        const deletedIds = getDeletedRegistrationIds();
         const items: Registration[] = [];
+
         snapshot.forEach(docSnap => {
-          items.push(docSnap.data() as Registration);
+          const docId = docSnap.id;
+          const data = docSnap.data() as Registration;
+          const finalId = data.id || docId;
+
+          // Never resurrect an applicant that was explicitly deleted by the admin
+          if (deletedIds.has(finalId) || deletedIds.has(docId)) {
+            deleteDoc(doc(db, colPath, docId)).catch(() => {});
+            return;
+          }
+
+          items.push({
+            ...data,
+            id: finalId,
+          });
         });
         
         const sorted = sortRegistrationsDesc(items);

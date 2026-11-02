@@ -25,6 +25,7 @@ import {
   createRegistrationCloud, 
   updateRegistrationStatusCloud, 
   deleteRegistrationCloud, 
+  resetRegistrationsToSampleCloud,
   subscribeToLiveRegistrations, 
   testFirestoreConnection 
 } from './utils/firestoreService';
@@ -124,21 +125,28 @@ export default function App() {
     updateRegistrationStatusCloud(id, status, notes);
   };
 
-  const handleDeleteRegistration = (id: string) => {
-    const updated = deleteRegistration(id);
-    setRegistrations(updated);
-    deleteRegistrationCloud(id);
+  const handleDeleteRegistration = async (id: string): Promise<boolean> => {
+    // 1. Immediately remove from local state
+    setRegistrations(prev => prev.filter(item => item.id !== id));
+    // 2. Permanently remove from Firestore and local storage
+    const success = await deleteRegistrationCloud(id);
+    return success;
   };
 
   const handleAddManualRegistration = async (formData: RegistrationFormData) => {
     const newRecord = await createRegistrationCloud(formData);
-    setRegistrations(prev => [newRecord, ...prev]);
+    setRegistrations(prev => [newRecord, ...prev.filter(r => r.id !== newRecord.id)]);
   };
 
-  const handleResetSampleData = () => {
-    if (window.confirm('Reset data pendaftar ke data awal contoh?')) {
-      const reset = resetToSampleData();
-      setRegistrations(reset);
+  const handleResetSampleData = async () => {
+    if (window.confirm('Reset data pendaftar ke data awal contoh di sistem dan Cloud Firestore?')) {
+      setIsSyncing(true);
+      try {
+        const reset = await resetRegistrationsToSampleCloud();
+        setRegistrations(reset);
+      } finally {
+        setIsSyncing(false);
+      }
     }
   };
 

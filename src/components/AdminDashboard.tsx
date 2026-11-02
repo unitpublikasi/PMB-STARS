@@ -33,7 +33,7 @@ import { INFO_SOURCES, BIAYA_KELAS_REGULER, BIAYA_KELAS_KARYAWAN } from '../data
 interface AdminDashboardProps {
   registrations: Registration[];
   onUpdateStatus: (id: string, status: RegistrationStatus, notes?: string) => void;
-  onDeleteRegistration: (id: string) => void;
+  onDeleteRegistration: (id: string) => Promise<boolean> | void;
   onAddManualRegistration: (formData: RegistrationFormData) => void;
   onResetSampleData: () => void;
   onRefreshCloud?: () => void;
@@ -55,6 +55,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | RegistrationStatus>('all');
   const [viewMode, setViewMode] = useState<'adaptive' | 'cards' | 'table'>('adaptive');
+
+  // Deletion tracking
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   // Modals
   const [viewingRegistration, setViewingRegistration] = useState<Registration | null>(null);
@@ -126,6 +130,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (viewingRegistration) {
       onUpdateStatus(viewingRegistration.id, newStatus, adminNotes);
       setViewingRegistration(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
+  const handleDeleteItem = async (item: Registration) => {
+    const confirmText = `Hapus permanen data calon mahasiswa "${item.namaLengkap}" (${item.id}) dari database?\n\nData yang telah dihapus tidak akan muncul kembali meskipun halaman di-refresh.`;
+    if (!window.confirm(confirmText)) {
+      return;
+    }
+
+    setDeletingId(item.id);
+    try {
+      await onDeleteRegistration(item.id);
+      if (viewingRegistration?.id === item.id) {
+        setViewingRegistration(null);
+      }
+      setDeleteNotice(`Data calon mahasiswa "${item.namaLengkap}" (${item.id}) berhasil dihapus permanen.`);
+      setTimeout(() => {
+        setDeleteNotice(null);
+      }, 5000);
+    } catch (err) {
+      console.error('Error deleting registration:', err);
+      alert('Gagal menghapus data dari database. Silakan coba kembali.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -229,6 +257,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Delete Feedback Alert */}
+      {deleteNotice && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between gap-3 text-xs sm:text-sm animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-rose-600 shrink-0" />
+            <span className="font-semibold">{deleteNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDeleteNotice(null)}
+            className="text-rose-500 hover:text-rose-800 p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
@@ -575,15 +620,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (window.confirm(`Hapus data pendaftar ${item.namaLengkap} (${item.id})?`)) {
-                              onDeleteRegistration(item.id);
-                            }
-                          }}
-                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 bg-slate-100 transition-colors"
-                          title="Hapus Data"
+                          disabled={deletingId === item.id}
+                          onClick={() => handleDeleteItem(item)}
+                          className={`p-2 rounded-xl transition-colors ${
+                            deletingId === item.id
+                              ? 'bg-rose-100 text-rose-400 cursor-not-allowed'
+                              : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 bg-slate-100'
+                          }`}
+                          title="Hapus Data Permanen"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deletingId === item.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin text-rose-600" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -694,15 +744,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                if (window.confirm(`Hapus data pendaftar ${item.namaLengkap} (${item.id})?`)) {
-                                  onDeleteRegistration(item.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Hapus Data"
+                              disabled={deletingId === item.id}
+                              onClick={() => handleDeleteItem(item)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                deletingId === item.id
+                                  ? 'bg-rose-100 text-rose-400 cursor-not-allowed'
+                                  : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                              }`}
+                              title="Hapus Data Permanen"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {deletingId === item.id ? (
+                                <RefreshCw className="w-4 h-4 animate-spin text-rose-600" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </td>
@@ -872,15 +927,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => exportSingleRegistrationPdf(viewingRegistration)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold"
-              >
-                <Download className="w-4 h-4 text-amber-400" />
-                <span>Unduh Bukti Pendaftaran PDF</span>
-              </button>
+            <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportSingleRegistrationPdf(viewingRegistration)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold shadow-sm"
+                >
+                  <Download className="w-4 h-4 text-amber-400" />
+                  <span>Unduh Kartu PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={deletingId === viewingRegistration.id}
+                  onClick={() => handleDeleteItem(viewingRegistration)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold transition-colors disabled:opacity-50"
+                  title="Hapus data calon mahasiswa ini permanen dari database"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{deletingId === viewingRegistration.id ? 'Menghapus...' : 'Hapus Pendaftar'}</span>
+                </button>
+              </div>
 
               <button
                 type="button"

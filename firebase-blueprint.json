@@ -102,6 +102,9 @@
     "/registrations/{registrationId}": {
       "schema": "Registration",
       "description": "Koleksi data formulir pendaftaran calon mahasiswa baru"
+    },
+    "/_metadata/{docId}": {
+      "description": "Metadata status inisialisasi sistem PMB"
     }
   }
 }
